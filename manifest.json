@@ -1,0 +1,9 @@
+{
+  "name":"PokéPal Interactive",
+  "short_name":"PokéPal",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#11151d",
+  "theme_color":"#1d2330",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

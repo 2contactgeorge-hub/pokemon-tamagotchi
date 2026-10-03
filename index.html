@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1d2330">
+<title>PokéPal HG — ROM Edition</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#11151d;--panel:#1b2230;--panel2:#232b3b;--line:#3a465c;--text:#f6f7fb;--muted:#aeb8c8;
+  --good:#7fdb9a;--warn:#f0c674;--bad:#ee7d7d;--accent:#8fb6ff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100%}
+body{padding:max(10px,env(safe-area-inset-top)) 10px max(18px,env(safe-area-inset-bottom));overscroll-behavior:none}
+button,input,select{font:inherit}.app{max-width:620px;margin:0 auto}.hidden{display:none!important}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:2px 2px 10px}
+.brand{font-weight:900;font-size:20px}.small{font-size:12px;color:var(--muted)}.chip{font-size:12px;border:1px solid var(--line);padding:6px 9px;border-radius:999px;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:14px;margin:10px 0}
+.setup h1{margin:0 0 6px}.setup label{display:block;font-size:13px;font-weight:750;margin:12px 0}.setup select,.setup input{width:100%;margin-top:7px;background:#121824;color:var(--text);border:1px solid var(--line);border-radius:13px;padding:13px;font-size:16px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:14px;min-height:46px;padding:10px 12px;font-weight:800}.btn:active{transform:translateY(1px)}.btn.primary{background:#e8efff;color:#101521;border-color:#e8efff}.btn.danger{background:#351f25}.btn:disabled{opacity:.45}
+.room-wrap{position:relative;border-radius:22px;overflow:hidden;border:1px solid #3e4a61;background:#7e9cba;touch-action:manipulation;user-select:none}
+.room{position:relative;height:380px;overflow:hidden;background:linear-gradient(#89a7c4 0 58%,#b48a61 58% 100%)}
+.room.night{background:linear-gradient(#263550 0 58%,#725b4b 58% 100%)}
+.room.adventure{background:linear-gradient(#9cd0f2 0 45%,#7fae56 45% 67%,#559345 67% 100%)}
+.window{position:absolute;left:8%;top:8%;width:25%;height:26%;border:7px solid #d9c6a1;background:linear-gradient(#7dc7ee,#d7effb);box-shadow:inset 0 0 0 4px #9d815f}.night .window{background:linear-gradient(#13233d,#314362)}
+.window:before,.window:after{content:"";position:absolute;background:#d9c6a1}.window:before{width:7px;left:47%;top:0;bottom:0}.window:after{height:7px;left:0;right:0;top:47%}
+.poster{position:absolute;right:7%;top:9%;width:21%;height:25%;background:#e7d99d;border:5px solid #5a4330;display:grid;place-items:center;font-size:33px;transform:rotate(1deg)}
+.rug{position:absolute;left:22%;bottom:5%;width:56%;height:20%;border-radius:50%;background:#6e5a77;opacity:.9}
+.bed{position:absolute;right:4%;bottom:27%;width:27%;height:17%;border-radius:16px 16px 7px 7px;background:#e7dfc9;border:5px solid #5a4330}.bed:before{content:"";position:absolute;left:6%;top:10%;width:34%;height:55%;border-radius:50%;background:#f9f5e8}.bed:after{content:"BED";position:absolute;right:8%;bottom:8%;font-size:10px;color:#554c42;font-weight:900}
+.bowl{position:absolute;left:7%;bottom:24%;width:58px;height:28px;border-radius:5px 5px 28px 28px;background:#d96b63;border:4px solid #5c302d}.bowl:after{content:"FOOD";position:absolute;left:8px;top:5px;color:#fff;font-size:9px;font-weight:900}
+.ball{position:absolute;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#fafafa 0 47%,#333 48% 54%,#df5555 55%);border:2px solid #111;left:66%;bottom:17%;z-index:6;box-shadow:0 3px 5px #0004;transition:left .4s ease,bottom .4s ease,transform .25s ease}.ball.bounce{animation:ballBounce .55s ease}
+@keyframes ballBounce{0%{transform:translateY(0)}45%{transform:translateY(-56px) rotate(130deg)}100%{transform:translateY(0) rotate(250deg)}}
+.pet{position:absolute;left:48%;bottom:21%;width:112px;height:112px;z-index:8;transform:translate(-50%,0);transition:left .8s ease,bottom .8s ease,filter .2s ease;display:grid;place-items:center;touch-action:none}
+.pet img{max-width:100%;max-height:100%;image-rendering:pixelated;min-width:96px;min-height:96px;object-fit:contain;filter:drop-shadow(0 5px 2px #0005);transform-origin:center bottom}.pet.flip img{transform:scaleX(-1)}.pet.sleeping img{filter:brightness(.72) saturate(.7)}.pet.petted img{animation:petBounce .35s ease}.pet.hurt img{animation:hurt .25s linear 2}
+@keyframes petBounce{50%{transform:translateY(-12px) scale(1.06)}}@keyframes hurt{50%{transform:translateX(7px)}}
+.shadow{position:absolute;left:50%;bottom:2px;width:68px;height:13px;background:#0004;border-radius:50%;transform:translateX(-50%);z-index:-1}
+.bubble{position:absolute;z-index:12;left:50%;bottom:84%;transform:translateX(-50%);background:#fff;color:#1a1a1a;border-radius:18px;padding:7px 11px;font-size:13px;min-width:max-content;box-shadow:0 4px 12px #0004;opacity:0;transition:opacity .18s ease}.bubble.show{opacity:1}.bubble:after{content:"";position:absolute;left:47%;top:100%;border:8px solid transparent;border-top-color:#fff}
+.fx{position:absolute;inset:0;pointer-events:none;z-index:15;overflow:hidden}.heart{position:absolute;font-size:22px;animation:floatHeart 1s ease forwards}@keyframes floatHeart{from{transform:translateY(0) scale(.7);opacity:1}to{transform:translateY(-80px) scale(1.3);opacity:0}}
+.spark{position:absolute;font-size:20px;animation:spark 1s ease forwards}@keyframes spark{0%{transform:scale(.2) rotate(0);opacity:1}100%{transform:scale(1.4) rotate(180deg);opacity:0}}
+.zs{position:absolute;font-weight:900;font-size:24px;animation:zfloat 1.4s linear forwards}@keyframes zfloat{from{transform:translateY(0) scale(.7);opacity:1}to{transform:translate(22px,-72px) scale(1.25);opacity:0}}
+.room-hint{position:absolute;left:50%;top:8px;transform:translateX(-50%);font-size:11px;background:#111a;color:#fff;padding:6px 9px;border-radius:999px;z-index:20;pointer-events:none}
+.adventure-ui{position:absolute;left:10px;right:10px;bottom:10px;display:flex;justify-content:space-between;gap:8px;z-index:20}.adventure-ui .btn{background:#142031dd;backdrop-filter:blur(5px)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{background:#151b26;border:1px solid #303b50;border-radius:13px;padding:9px}.stat-top{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px}.bar{height:9px;border-radius:999px;background:#303747;overflow:hidden}.fill{height:100%;background:#d7e3ff;transition:width .25s ease}.stat.low .fill{background:var(--bad)}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.actions .btn{font-size:12px;padding:8px 5px}.actions .wide{grid-column:span 2}
+.name-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 8px}.petname{font-size:19px;font-weight:900}.moodtext{font-size:12px;color:var(--muted);text-align:right}
+.tabs{display:flex;gap:7px;overflow:auto;padding:2px}.tab{flex:1;min-width:90px}.tab.active{background:#e8efff;color:#101521}
+.panel{display:none}.panel.active{display:block}.food-grid,.toy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.item{background:#151b26;border:1px solid #344057;border-radius:14px;padding:10px;text-align:center}.item .emoji{font-size:27px}.item .qty{font-size:11px;color:var(--muted)}
+.log{max-height:180px;overflow:auto;font-size:12px;color:#c9d1df}.log div{padding:7px 0;border-bottom:1px solid #30394b}
+.switchline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:9px 0}.switchline input{width:22px;height:22px}.footer-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:8px}
+.modal-back{position:fixed;inset:0;background:#000a;z-index:50;display:grid;place-items:center;padding:18px}.modal{width:min(92vw,460px);background:#1b2230;border:1px solid #49556d;border-radius:20px;padding:16px}.modal h2{margin:0 0 7px}.minigame{height:260px;border:1px solid #40506b;border-radius:16px;position:relative;background:linear-gradient(#8bc0e8 0 52%,#75a955 52%);overflow:hidden}.target{position:absolute;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#fff 0 45%,#222 46% 54%,#e65c5c 55%);border:3px solid #111;display:grid;place-items:center;font-weight:900;color:#111;transition:left .12s,top .12s}
+.death{text-align:center}.grave{font-size:72px}
+@media(max-width:420px){.room{height:340px}.pet{width:100px;height:100px}.actions{grid-template-columns:repeat(3,1fr)}.actions .wide{grid-column:span 3}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="setup" class="card setup">
+  <h1>Choose your companion</h1>
+  <div class="small">HeartGold ROM follower sprites are used when available. Your save stays in this browser.</div>
+  <label>Pokémon
+    <select id="species"></select>
+  </label>
+  <label>Nickname
+    <input id="nickname" maxlength="16" placeholder="e.g. Mitch">
+  </label>
+  <label class="switchline"><span>Mortality mode</span><input id="mortalitySetup" type="checkbox"></label>
+  <button id="start" class="btn primary" style="width:100%">Bring Pokémon Home</button>
+</section>
+
+<main id="game" class="hidden">
+  <div class="topbar"><div><div class="brand">PokéPal HG</div><div class="small">HeartGold ROM edition</div></div><span id="saveChip" class="chip">Saved</span></div>
+  <div class="name-row"><div id="petName" class="petname"></div><div><div id="moodText" class="moodtext"></div><div id="assetMode" class="small" style="text-align:right"></div></div></div>
+
+  <section class="room-wrap">
+    <div id="room" class="room">
+      <div id="roomHint" class="room-hint">Tap the floor to call your Pokémon</div>
+      <div class="window home-only"></div><div class="poster home-only">★</div><div class="rug home-only"></div>
+      <div id="bed" class="bed home-only"></div><div id="bowl" class="bowl home-only"></div><button id="ball" class="ball home-only" aria-label="Throw ball"></button>
+      <div id="pet" class="pet" role="button" tabindex="0" aria-label="Pet your Pokémon">
+        <div id="speech" class="bubble"></div><img id="sprite" alt="Pokémon sprite"><div class="shadow"></div>
+      </div>
+      <div id="fx" class="fx"></div>
+      <div id="adventureControls" class="adventure-ui hidden"><button id="forage" class="btn">🌿 Forage</button><button id="homeBtn" class="btn">🏠 Go Home</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div id="stats" class="stats"></div>
+  </section>
+
+  <section class="card">
+    <div class="actions">
+      <button class="btn" data-act="feed">🍎 Feed</button>
+      <button class="btn" data-act="pet">❤️ Pet</button>
+      <button class="btn" data-act="clean">🫧 Clean</button>
+      <button class="btn" data-act="heal">💊 Heal</button>
+      <button class="btn" data-act="sleep">🌙 Sleep</button>
+      <button class="btn" data-act="train">🥊 Train</button>
+      <button class="btn wide primary" data-act="fetch">🎾 Play Fetch</button>
+      <button class="btn wide primary" data-act="adventure">🗺️ Adventure</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="tabs"><button class="btn tab active" data-tab="inventory">Inventory</button><button class="btn tab" data-tab="journal">Journal</button><button class="btn tab" data-tab="settings">Settings</button></div>
+    <div id="inventory" class="panel active" style="margin-top:12px"><div id="foodGrid" class="food-grid"></div></div>
+    <div id="journal" class="panel" style="margin-top:12px"><div id="log" class="log"></div></div>
+    <div id="settings" class="panel" style="margin-top:12px">
+      <label class="switchline"><span>Mortality mode</span><input id="mortality" type="checkbox"></label>
+      <label class="switchline"><span>Use animated sprite</span><input id="animated" type="checkbox" checked></label>
+      <div id="romStatus" class="footer-note">HeartGold ROM sprite support: Pikachu available locally.</div>
+      <button id="rename" class="btn" style="width:100%;margin-top:5px">Rename Pokémon</button>
+      <button id="reset" class="btn danger" style="width:100%;margin-top:8px">Reset Save</button>
+      <div class="footer-note">Pikachu overworld frames in this build were extracted locally from your HeartGold dump. Other species fall back to PokéAPI where needed. This is a personal fan project, not an official Pokémon product.</div>
+    </div>
+  </section>
+</main>
+
+<section id="death" class="card death hidden"><div class="grave">🪦</div><h2 id="deathTitle"></h2><p id="deathText" class="small"></p><button id="funeral" class="btn primary" style="width:100%">Hold Funeral</button><button id="newPet" class="btn" style="width:100%;margin-top:8px">Choose a New Pokémon</button></section>
+</div>
+
+<div id="modalBack" class="modal-back hidden"><div class="modal"><h2>Fetch</h2><p id="miniText" class="small">Tap the ball 5 times before the timer ends.</p><div id="minigame" class="minigame"><button id="target" class="target" aria-label="Tap the ball">🎾</button></div><div style="display:flex;justify-content:space-between;margin:10px 2px 0"><span id="miniScore">0 / 5</span><span id="miniTime">10.0s</span></div><button id="closeMini" class="btn" style="width:100%;margin-top:10px">Close</button></div></div>
+
+<script>
+(()=>{
+const ROOT='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+const POKEMON=[
+{id:1,name:'Bulbasaur',emoji:'🌱'},{id:4,name:'Charmander',emoji:'🔥'},{id:7,name:'Squirtle',emoji:'💧'},
+{id:25,name:'Pikachu',emoji:'⚡'},{id:39,name:'Jigglypuff',emoji:'🎵'},{id:52,name:'Meowth',emoji:'🐱'},
+{id:54,name:'Psyduck',emoji:'🦆'},{id:133,name:'Eevee',emoji:'🦊'},{id:143,name:'Snorlax',emoji:'💤'},
+{id:152,name:'Chikorita',emoji:'🍃'},{id:155,name:'Cyndaquil',emoji:'🔥'},{id:158,name:'Totodile',emoji:'💦'},
+{id:172,name:'Pichu',emoji:'⚡'},{id:175,name:'Togepi',emoji:'🥚'},{id:196,name:'Espeon',emoji:'🔮'},
+{id:197,name:'Umbreon',emoji:'🌙'},{id:252,name:'Treecko',emoji:'🌿'},{id:255,name:'Torchic',emoji:'🐥'},
+{id:258,name:'Mudkip',emoji:'💧'},{id:300,name:'Skitty',emoji:'🐱'},{id:393,name:'Piplup',emoji:'🐧'},
+{id:447,name:'Riolu',emoji:'🥊'},{id:495,name:'Snivy',emoji:'🌿'},{id:498,name:'Tepig',emoji:'🐷'},
+{id:501,name:'Oshawott',emoji:'🦦'},{id:570,name:'Zorua',emoji:'🦊'}
+];
+const KEY='pokepal_v2_save'; const clamp=n=>Math.max(0,Math.min(100,n)); const $=id=>document.getElementById(id);
+const el={setup:$('setup'),game:$('game'),death:$('death'),species:$('species'),nickname:$('nickname'),mortalitySetup:$('mortalitySetup'),start:$('start'),room:$('room'),roomHint:$('roomHint'),pet:$('pet'),sprite:$('sprite'),speech:$('speech'),fx:$('fx'),ball:$('ball'),bed:$('bed'),bowl:$('bowl'),petName:$('petName'),moodText:$('moodText'),assetMode:$('assetMode'),stats:$('stats'),foodGrid:$('foodGrid'),log:$('log'),mortality:$('mortality'),animated:$('animated'),rename:$('rename'),reset:$('reset'),saveChip:$('saveChip'),advControls:$('adventureControls'),forage:$('forage'),homeBtn:$('homeBtn'),modalBack:$('modalBack'),minigame:$('minigame'),target:$('target'),miniScore:$('miniScore'),miniTime:$('miniTime'),miniText:$('miniText'),closeMini:$('closeMini'),deathTitle:$('deathTitle'),deathText:$('deathText'),funeral:$('funeral'),newPet:$('newPet')};
+let state=null, bubbleTimer=null, miniTimer=null, miniStart=0, miniScore=0, petCooldown=0, idleTimer=null, walkTimer=null;
+const ROM_PIKACHU='./rom_assets/pikachu/';
+POKEMON.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;el.species.appendChild(o)});el.species.value='25';
+function makeState(){const p=POKEMON.find(x=>x.id===Number(el.species.value))||POKEMON[3];const nick=el.nickname.value.trim()||p.name;const t=Date.now();return{speciesId:p.id,species:p.name,emoji:p.emoji,nickname:nick,created:t,lastTick:t,hunger:88,happy:88,energy:90,clean:92,health:100,xp:0,level:1,sleeping:false,mortality:el.mortalitySetup.checked,animated:true,dead:false,funeral:false,mode:'home',x:48,y:21,inventory:{berry:4,apple:3,puff:2,medicine:2},steps:0,log:[`${nick} (${p.name}) came home with you.`]}}
+function save(){if(!state)return;localStorage.setItem(KEY,JSON.stringify(state));el.saveChip.textContent='Saved';clearTimeout(save._t);save._t=setTimeout(()=>el.saveChip.textContent='Auto-save on',800)}
+function load(){try{state=JSON.parse(localStorage.getItem(KEY)||'null')}catch{state=null}}
+function log(msg){if(!state)return;const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});state.log.unshift(`${t} — ${msg}`);state.log=state.log.slice(0,45)}
+function hasRomOverworld(){return state&&state.speciesId===25}
+function romFrame(n){return `${ROM_PIKACHU}frame_${n}.png`}
+function spriteURL(){if(hasRomOverworld())return romFrame(2);return state.animated?`${ROOT}versions/generation-v/black-white/animated/${state.speciesId}.gif`:`${ROOT}${state.speciesId}.png`}
+function stopWalkAnimation(finalFrame=null){clearInterval(walkTimer);walkTimer=null;if(hasRomOverworld()&&finalFrame!==null){el.sprite.src=romFrame(finalFrame)}}
+function animateRomWalk(dx,dy,duration=820){
+  if(!hasRomOverworld())return;
+  clearInterval(walkTimer);
+  el.pet.classList.remove('flip');
+  let pair;
+  if(Math.abs(dx)>=Math.abs(dy)) pair=dx<0?[4,5]:[6,7];
+  else pair=dy>0?[0,1]:[2,3];
+  let n=0;el.sprite.src=romFrame(pair[0]);
+  walkTimer=setInterval(()=>{n^=1;el.sprite.src=romFrame(pair[n])},150);
+  setTimeout(()=>stopWalkAnimation(pair[0]),duration);
+}
+function fallbackSprite(){if(el.sprite.dataset.fallback==='1'){el.sprite.style.display='none';el.pet.setAttribute('data-emoji',state.emoji);el.pet.style.fontSize='64px';if(!el.pet.querySelector('.emojiFallback')){const s=document.createElement('div');s.className='emojiFallback';s.textContent=state.emoji;el.pet.insertBefore(s,el.pet.firstChild)}}else{el.sprite.dataset.fallback='1';el.sprite.src=`${ROOT}${state.speciesId}.png`}}
+el.sprite.addEventListener('error',fallbackSprite);
+function decay(){if(!state||state.dead)return;let mins=Math.min(720,Math.max(0,(Date.now()-state.lastTick)/60000));state.lastTick=Date.now();if(!mins)return;if(state.sleeping){state.energy=clamp(state.energy+mins*.23);state.hunger=clamp(state.hunger-mins*.055);state.clean=clamp(state.clean-mins*.02);state.happy=clamp(state.happy-mins*.012)}else{state.hunger=clamp(state.hunger-mins*.075);state.happy=clamp(state.happy-mins*.032);state.energy=clamp(state.energy-mins*.052);state.clean=clamp(state.clean-mins*.04)}let danger=(state.hunger<10)+(state.energy<5)+(state.clean<8);if(danger)state.health=clamp(state.health-mins*.045*danger);else if(state.hunger>35&&state.energy>28&&state.clean>28)state.health=clamp(state.health+mins*.013);if(state.mortality&&state.health<=0){state.dead=true;log(`${state.nickname} passed away.`)}else if(!state.mortality&&state.health<1)state.health=1}
+function xp(n){state.xp+=n;let need=state.level*100;while(state.xp>=need){state.xp-=need;state.level++;state.happy=clamp(state.happy+10);state.health=clamp(state.health+6);log(`${state.nickname} reached level ${state.level}!`);bubble('Level up! ⭐');need=state.level*100}}
+function mood(){if(state.sleeping)return'Sleeping';if(state.health<25)return'Unwell';if(state.hunger<20)return'Hungry';if(state.energy<18)return'Tired';if(state.clean<18)return'Dirty';if(state.happy<28)return'Lonely';if(state.happy>82&&state.health>75)return'Happy';return'Content'}
+function bubble(text,ms=1300){el.speech.textContent=text;el.speech.classList.add('show');clearTimeout(bubbleTimer);bubbleTimer=setTimeout(()=>el.speech.classList.remove('show'),ms)}
+function fx(type,x=50,y=42){const s=document.createElement('span');s.className=type==='heart'?'heart':type==='z'?'zs':'spark';s.textContent=type==='heart'?'❤':type==='z'?'Z':'✨';s.style.left=`${x+Math.random()*8-4}%`;s.style.top=`${y+Math.random()*8-4}%`;el.fx.appendChild(s);setTimeout(()=>s.remove(),1500)}
+function movePet(x,y,reason=''){x=Math.max(8,Math.min(88,x));y=Math.max(10,Math.min(55,y));const dx=x-state.x,dy=y-state.y;if(hasRomOverworld())animateRomWalk(dx,dy);else el.pet.classList.toggle('flip',x<state.x);state.x=x;state.y=y;el.pet.style.left=x+'%';el.pet.style.bottom=y+'%';if(reason)bubble(reason,900)}
+function petAction(){if(!state||state.dead||state.sleeping)return;const t=Date.now();if(t<petCooldown)return;petCooldown=t+650;state.happy=clamp(state.happy+2.8);if(hasRomOverworld()){stopWalkAnimation();el.sprite.src=romFrame(2);setTimeout(()=>el.sprite.src=romFrame(3),150);setTimeout(()=>el.sprite.src=romFrame(2),320)}el.pet.classList.add('petted');setTimeout(()=>el.pet.classList.remove('petted'),400);fx('heart',state.x,68-state.y);if(Math.random()<.35)bubble(['Hehe!','❤','Again!','Happy!'][Math.floor(Math.random()*4)]);save();renderStats()}
+function feedItem(kind){if(state.sleeping){bubble('Zzz…');return}const item={berry:{label:'Oran Berry',h:18,hap:4,emoji:'🫐'},apple:{label:'Apple',h:27,hap:2,emoji:'🍎'},puff:{label:'Poké Puff',h:13,hap:14,emoji:'🧁'},medicine:{label:'Medicine',h:0,hap:-1,health:30,emoji:'💊'}}[kind];if(!item||state.inventory[kind]<=0){bubble('None left!');return}state.inventory[kind]--;movePet(15,25,'Food!');setTimeout(()=>{state.hunger=clamp(state.hunger+item.h);state.happy=clamp(state.happy+item.hap);if(item.health)state.health=clamp(state.health+item.health);state.clean=clamp(state.clean-2);log(`You gave ${state.nickname} ${item.label}.`);bubble(`${item.emoji} Yum!`);save();render()},700)}
+function clean(){if(state.sleeping)return bubble('Zzz…');state.clean=clamp(state.clean+42);state.happy=clamp(state.happy+3);for(let i=0;i<8;i++)setTimeout(()=>fx('spark',state.x+(Math.random()*10-5),63-state.y),i*70);log(`${state.nickname} got cleaned up.`);bubble('Sparkly! ✨');save();renderStats()}
+function heal(){feedItem('medicine')}
+function sleepToggle(){state.sleeping=!state.sleeping;if(state.sleeping){movePet(75,30,'Sleepy…');el.pet.classList.add('sleeping');log(`${state.nickname} went to sleep.`);for(let i=0;i<4;i++)setTimeout(()=>fx('z',78,35),i*550)}else{el.pet.classList.remove('sleeping');bubble('Morning!');log(`${state.nickname} woke up.`)}save();render()}
+function train(){if(state.sleeping)return bubble('Zzz…');if(state.energy<25||state.hunger<20)return bubble('Too tired/hungry');state.energy=clamp(state.energy-19);state.hunger=clamp(state.hunger-13);state.clean=clamp(state.clean-5);state.happy=clamp(state.happy+5);xp(24);movePet(52,28,'Training!');for(let i=0;i<4;i++)setTimeout(()=>fx('spark',state.x,60-state.y),i*120);log(`${state.nickname} trained hard.`);save();render()}
+function throwBall(){if(state.sleeping)return bubble('Zzz…');const bx=20+Math.random()*62,by=13+Math.random()*18;el.ball.style.left=bx+'%';el.ball.style.bottom=by+'%';el.ball.classList.remove('bounce');void el.ball.offsetWidth;el.ball.classList.add('bounce');setTimeout(()=>{movePet(bx,by,'!');state.happy=clamp(state.happy+3);state.energy=clamp(state.energy-2);save();renderStats()},400)}
+function adventure(){if(state.sleeping)return bubble('Wake me first…');if(state.energy<25||state.hunger<20||state.health<25)return bubble('Not ready yet');state.mode='adventure';state.steps=0;state.x=50;state.y=18;log(`You and ${state.nickname} went exploring.`);render();bubble('Let’s explore!')}
+function goHome(){state.mode='home';state.x=48;state.y=21;log(`You returned home together.`);save();render()}
+function forage(){if(state.mode!=='adventure')return;if(state.energy<8){bubble('Too tired');return}state.energy=clamp(state.energy-4);state.hunger=clamp(state.hunger-3);state.steps++;movePet(18+Math.random()*70,12+Math.random()*22,'');const r=Math.random();setTimeout(()=>{if(r<.25){state.inventory.berry++;bubble('Found a berry! 🫐');log(`${state.nickname} found an Oran Berry.`)}else if(r<.48){state.happy=clamp(state.happy+6);xp(8);bubble('Interesting scent!');log(`You discovered something interesting.`)}else if(r<.66){state.health=clamp(state.health-7);xp(14);el.pet.classList.add('hurt');setTimeout(()=>el.pet.classList.remove('hurt'),600);bubble('Wild scuffle!');log(`${state.nickname} got into a small wild scuffle.`)}else{xp(5);bubble('Nothing here…')}save();render()},650)}
+function startFetch(){if(state.sleeping)return bubble('Wake me first…');if(state.energy<18)return bubble('Too tired to play');miniScore=0;miniStart=performance.now();el.miniScore.textContent='0 / 5';el.miniText.textContent='Tap the ball 5 times before the timer ends.';el.modalBack.classList.remove('hidden');placeTarget();clearInterval(miniTimer);miniTimer=setInterval(()=>{const left=Math.max(0,10-(performance.now()-miniStart)/1000);el.miniTime.textContent=left.toFixed(1)+'s';if(left<=0)finishFetch(false)},100)}
+function placeTarget(){const w=el.minigame.clientWidth-60,h=el.minigame.clientHeight-60;el.target.style.left=Math.max(4,Math.random()*w)+'px';el.target.style.top=Math.max(4,Math.random()*h)+'px'}
+function finishFetch(won){clearInterval(miniTimer);miniTimer=null;if(won){state.happy=clamp(state.happy+18);state.energy=clamp(state.energy-13);state.hunger=clamp(state.hunger-6);xp(12);el.miniText.textContent=`${state.nickname} loved that!`;log(`You played fetch together.`);save();render()}else el.miniText.textContent='Time! Try again when you’re ready.'}
+el.target.addEventListener('click',()=>{if(!miniTimer)return;miniScore++;el.miniScore.textContent=`${miniScore} / 5`;if(miniScore>=5)finishFetch(true);else placeTarget()});el.closeMini.addEventListener('click',()=>{clearInterval(miniTimer);miniTimer=null;el.modalBack.classList.add('hidden')});
+function act(a){decay();if(a==='feed'){feedItem('berry');return}if(a==='pet'){petAction();return}if(a==='clean'){clean();return}if(a==='heal'){heal();return}if(a==='sleep'){sleepToggle();return}if(a==='train'){train();return}if(a==='fetch'){startFetch();return}if(a==='adventure'){adventure();return}}
+function renderStats(){const vals=[['Fullness','hunger'],['Happiness','happy'],['Energy','energy'],['Cleanliness','clean'],['Health','health']];el.stats.innerHTML=vals.map(([n,k])=>`<div class="stat ${state[k]<22?'low':''}"><div class="stat-top"><span>${n}</span><b>${Math.round(state[k])}</b></div><div class="bar"><div class="fill" style="width:${state[k]}%"></div></div></div>`).join('')+`<div class="stat"><div class="stat-top"><span>Level</span><b>${state.level}</b></div><div class="bar"><div class="fill" style="width:${Math.min(100,state.xp/(state.level*100)*100)}%"></div></div></div>`}
+function renderInventory(){const items=[['berry','🫐','Oran Berry'],['apple','🍎','Apple'],['puff','🧁','Poké Puff'],['medicine','💊','Medicine']];el.foodGrid.innerHTML=items.map(([k,e,n])=>`<button class="item" data-food="${k}"><div class="emoji">${e}</div><b>${n}</b><div class="qty">×${state.inventory[k]}</div></button>`).join('');el.foodGrid.querySelectorAll('[data-food]').forEach(b=>b.addEventListener('click',()=>feedItem(b.dataset.food)))}
+function isNight(){const h=new Date().getHours();return h<6||h>=19}
+function render(){if(!state){el.setup.classList.remove('hidden');el.game.classList.add('hidden');el.death.classList.add('hidden');return}decay();if(state.dead){el.setup.classList.add('hidden');el.game.classList.add('hidden');el.death.classList.remove('hidden');const days=Math.floor((Date.now()-state.created)/86400000);el.deathTitle.textContent=`${state.nickname} (${state.species}) has passed away.`;el.deathText.textContent=state.funeral?`You held a funeral for ${state.nickname}. They reached level ${state.level} and lived with you for ${days} day${days===1?'':'s'}.`:`They reached level ${state.level}. You can hold a small in-game funeral before starting again.`;el.funeral.disabled=state.funeral;el.funeral.textContent=state.funeral?'Funeral Held':'Hold Funeral';save();return}
+el.setup.classList.add('hidden');el.death.classList.add('hidden');el.game.classList.remove('hidden');el.petName.textContent=`${state.nickname} (${state.species})`;el.moodText.textContent=`${mood()} · Lv. ${state.level}`;el.assetMode.textContent=hasRomOverworld()?'HG ROM overworld frames':'online sprite fallback';el.mortality.checked=state.mortality;el.animated.checked=state.animated;el.pet.classList.toggle('sleeping',state.sleeping);el.room.classList.toggle('night',isNight()&&state.mode==='home');el.room.classList.toggle('adventure',state.mode==='adventure');document.querySelectorAll('.home-only').forEach(x=>x.classList.toggle('hidden',state.mode!=='home'));el.advControls.classList.toggle('hidden',state.mode!=='adventure');el.roomHint.textContent=state.mode==='home'?'Tap the floor to call your Pokémon':'Tap the field to walk · Forage to find things';el.pet.style.left=state.x+'%';el.pet.style.bottom=state.y+'%';el.sprite.dataset.fallback='0';el.sprite.style.display='block';const old=el.pet.querySelector('.emojiFallback');if(old)old.remove();el.pet.style.fontSize='';if(!hasRomOverworld()||!walkTimer)el.sprite.src=spriteURL();el.sprite.alt=hasRomOverworld()?`${state.species} HeartGold overworld sprite`:`${state.species} animated sprite`;renderStats();renderInventory();el.log.innerHTML=state.log.map(x=>`<div>${escapeHTML(x)}</div>`).join('');save()}
+function escapeHTML(s){return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+function idle(){clearInterval(idleTimer);idleTimer=setInterval(()=>{if(!state||state.dead||state.sleeping)return;if(state.mode==='home'&&Math.random()<.55){movePet(18+Math.random()*63,18+Math.random()*18,'');if(Math.random()<.25)bubble(['…','♪','?','!'][Math.floor(Math.random()*4)],800)}else if(state.mode==='adventure'&&Math.random()<.35)movePet(15+Math.random()*70,12+Math.random()*18,'')},5500)}
+el.start.addEventListener('click',()=>{state=makeState();save();render();idle()});
+el.pet.addEventListener('click',petAction);el.pet.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')petAction()});el.ball.addEventListener('click',e=>{e.stopPropagation();throwBall()});el.forage.addEventListener('click',forage);el.homeBtn.addEventListener('click',goHome);
+el.room.addEventListener('click',e=>{if(e.target.closest('button')||e.target.closest('.pet'))return;const r=el.room.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*100;const y=(r.bottom-e.clientY)/r.height*100;movePet(x,y,'');if(state.mode==='adventure'){state.energy=clamp(state.energy-.6);state.hunger=clamp(state.hunger-.3);state.steps++;if(state.steps%6===0&&Math.random()<.45){bubble('Something moved in the grass…');state.happy=clamp(state.happy+2)}save();renderStats()}});
+document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>act(b.dataset.act)));
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active')}));
+el.mortality.addEventListener('change',()=>{state.mortality=el.mortality.checked;log(`Mortality mode ${state.mortality?'enabled':'disabled'}.`);save()});el.animated.addEventListener('change',()=>{state.animated=el.animated.checked;save();render()});el.rename.addEventListener('click',()=>{const n=prompt('New nickname:',state.nickname);if(n&&n.trim()){state.nickname=n.trim().slice(0,16);log(`Nickname changed to ${state.nickname}.`);save();render()}});el.reset.addEventListener('click',()=>{if(confirm('Erase this save?')){localStorage.removeItem(KEY);state=null;render()}});el.funeral.addEventListener('click',()=>{state.funeral=true;log(`A funeral was held in memory of ${state.nickname}.`);save();render()});el.newPet.addEventListener('click',()=>{if(confirm('Start with a new Pokémon?')){localStorage.removeItem(KEY);state=null;render()}});
+load();render();idle();setInterval(()=>{if(state&&!state.dead){decay();renderStats();save();if(state.sleeping&&Math.random()<.35)fx('z',state.x+4,59-state.y);if(state.health<=0)render()}},60000);
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+})();
+</script>
+</body>
+</html>
