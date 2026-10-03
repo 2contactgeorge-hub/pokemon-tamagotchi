@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f5f5" />
+  <title>PokéPal</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --bg: #f4f4ef;
+      --card: #ffffff;
+      --ink: #171717;
+      --muted: #666;
+      --line: #d8d8d2;
+      --shadow: 0 12px 30px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: max(18px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    }
+    .app { max-width: 520px; margin: 0 auto; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 14px;
+    }
+    h1 { font-size: 24px; margin: 0; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 22px;
+      padding: 18px; box-shadow: var(--shadow); margin-bottom: 14px;
+    }
+    .pet-card { text-align: center; padding-top: 22px; }
+    .sprite {
+      width: 150px; height: 150px; margin: 0 auto 12px;
+      border-radius: 38px; display: grid; place-items: center;
+      font-size: 72px; border: 1px solid var(--line);
+      background: linear-gradient(180deg,#fff,#f7f7f1);
+      user-select: none;
+    }
+    .name { font-weight: 800; font-size: 24px; margin-top: 4px; }
+    .meta { color: var(--muted); margin-top: 4px; font-size: 14px; }
+    .mood { margin-top: 10px; font-size: 15px; min-height: 22px; }
+    .stats { display: grid; gap: 12px; }
+    .stat-row { display: grid; grid-template-columns: 92px 1fr 42px; align-items: center; gap: 10px; }
+    .stat-label { font-size: 14px; }
+    .bar { height: 12px; border-radius: 999px; background: #ecece6; overflow: hidden; border: 1px solid #deded8; }
+    .fill { height: 100%; width: 50%; background: #222; transition: width .25s ease; }
+    .value { font-variant-numeric: tabular-nums; text-align: right; font-size: 13px; color: var(--muted); }
+    .actions {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    }
+    button, select, input {
+      font: inherit;
+    }
+    button {
+      border: 1px solid #cfcfc8; background: #fff; color: #111;
+      border-radius: 16px; padding: 14px 12px; font-weight: 700;
+      box-shadow: 0 3px 10px rgba(0,0,0,.04);
+    }
+    button:active { transform: translateY(1px); }
+    button.primary { background:#171717; color:#fff; border-color:#171717; }
+    button.danger { background:#fff5f5; border-color:#e3b5b5; }
+    button:disabled { opacity:.45; }
+    .tiny { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+    input, select {
+      width:100%; padding:13px 14px; border-radius:14px; border:1px solid #cfcfc8; background:#fff;
+      margin-top:6px;
+    }
+    label { display:block; font-size:13px; font-weight:700; margin-bottom:12px; }
+    .hidden { display:none !important; }
+    .tag {
+      display:inline-block; padding:5px 9px; border-radius:999px;
+      background:#f0f0eb; border:1px solid #ddd; color:#555; font-size:12px;
+    }
+    .log { max-height: 160px; overflow:auto; font-size:13px; line-height:1.45; color:#444; }
+    .log div { padding:7px 0; border-bottom:1px solid #eee; }
+    .log div:last-child { border-bottom:0; }
+    .settings-grid { display:grid; gap:10px; }
+    .toggle-line { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .toggle-line input { width:auto; margin:0; transform:scale(1.2); }
+    .death {
+      text-align:center; padding:26px 18px;
+    }
+    .grave { font-size:76px; margin-bottom:8px; }
+    .footnote { margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <section id="setupView" class="card">
+      <h1>Create your Pokémon</h1>
+      <p class="sub">Pick a species and give it a nickname. The game saves automatically on this device.</p>
+
+      <label>
+        Species
+        <select id="speciesSelect">
+          <option>Pikachu</option>
+          <option>Eevee</option>
+          <option>Charmander</option>
+          <option>Squirtle</option>
+          <option>Bulbasaur</option>
+          <option>Meowth</option>
+          <option>Jigglypuff</option>
+        </select>
+      </label>
+
+      <label>
+        Nickname
+        <input id="nicknameInput" maxlength="16" placeholder="e.g. Mitch" />
+      </label>
+
+      <label class="toggle-line">
+        <span>Mortality mode <span class="sub">(health can reach 0)</span></span>
+        <input id="mortalitySetup" type="checkbox" checked />
+      </label>
+
+      <button id="startBtn" class="primary" style="width:100%">Start</button>
+    </section>
+
+    <main id="gameView" class="hidden">
+      <div class="topbar">
+        <div>
+          <h1>PokéPal</h1>
+          <div class="sub">A tiny Pokémon companion</div>
+        </div>
+        <span id="saveTag" class="tag">Saved</span>
+      </div>
+
+      <section class="card pet-card">
+        <div id="sprite" class="sprite">⚡</div>
+        <div id="displayName" class="name">Mitch (Pikachu)</div>
+        <div id="meta" class="meta">Level 1 · Age 0 days · 0 XP</div>
+        <div id="mood" class="mood">Looks happy to see you.</div>
+      </section>
+
+      <section class="card">
+        <div class="stats">
+          <div class="stat-row">
+            <div class="stat-label">Fullness</div>
+            <div class="bar"><div id="hungerBar" class="fill"></div></div>
+            <div id="hungerVal" class="value">100</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Happiness</div>
+            <div class="bar"><div id="happyBar" class="fill"></div></div>
+            <div id="happyVal" class="value">100</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Energy</div>
+            <div class="bar"><div id="energyBar" class="fill"></div></div>
+            <div id="energyVal" class="value">100</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Cleanliness</div>
+            <div class="bar"><div id="cleanBar" class="fill"></div></div>
+            <div id="cleanVal" class="value">100</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">Health</div>
+            <div class="bar"><div id="healthBar" class="fill"></div></div>
+            <div id="healthVal" class="value">100</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="actions">
+          <button data-action="feed">🍎 Feed</button>
+          <button data-action="play">🎾 Play</button>
+          <button data-action="train">🥊 Train</button>
+          <button data-action="clean">🧼 Clean</button>
+          <button data-action="heal">💊 Heal</button>
+          <button data-action="sleep">🌙 Sleep / Wake</button>
+          <button data-action="adventure" class="primary" style="grid-column:1 / -1">🗺️ Go on Adventure</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <strong>Journal</strong>
+        <div id="log" class="log" style="margin-top:8px"></div>
+      </section>
+
+      <section class="card">
+        <strong>Settings</strong>
+        <div class="settings-grid" style="margin-top:12px">
+          <label class="toggle-line">
+            <span>Mortality mode</span>
+            <input id="mortalityToggle" type="checkbox" />
+          </label>
+          <button id="renameBtn">Rename Pokémon</button>
+          <button id="resetBtn" class="danger">Reset Game</button>
+        </div>
+        <div class="tiny footnote">
+          Stats decrease with real time, even when the page is closed. Extremely long gaps are capped so the game stays playable.
+        </div>
+      </section>
+    </main>
+
+    <section id="deathView" class="card death hidden">
+      <div class="grave">🪦</div>
+      <h1 id="deathTitle">Your Pokémon has passed away.</h1>
+      <p id="deathText" class="sub"></p>
+      <button id="funeralBtn" class="primary" style="width:100%">Hold Funeral</button>
+      <button id="newPetBtn" style="width:100%; margin-top:10px">Start With a New Pokémon</button>
+    </section>
+  </div>
+
+<script>
+(() => {
+  const KEY = "pokepal_save_v1";
+
+  const speciesEmoji = {
+    Pikachu: "⚡",
+    Eevee: "🦊",
+    Charmander: "🔥",
+    Squirtle: "💧",
+    Bulbasaur: "🌱",
+    Meowth: "🐱",
+    Jigglypuff: "🎵"
+  };
+
+  const clamp = n => Math.max(0, Math.min(100, n));
+  const now = () => Date.now();
+
+  let state = null;
+
+  const els = {
+    setup: document.getElementById("setupView"),
+    game: document.getElementById("gameView"),
+    death: document.getElementById("deathView"),
+    species: document.getElementById("speciesSelect"),
+    nickname: document.getElementById("nicknameInput"),
+    mortalitySetup: document.getElementById("mortalitySetup"),
+    start: document.getElementById("startBtn"),
+    sprite: document.getElementById("sprite"),
+    displayName: document.getElementById("displayName"),
+    meta: document.getElementById("meta"),
+    mood: document.getElementById("mood"),
+    saveTag: document.getElementById("saveTag"),
+    log: document.getElementById("log"),
+    mortalityToggle: document.getElementById("mortalityToggle"),
+    renameBtn: document.getElementById("renameBtn"),
+    resetBtn: document.getElementById("resetBtn"),
+    funeralBtn: document.getElementById("funeralBtn"),
+    newPetBtn: document.getElementById("newPetBtn"),
+    deathTitle: document.getElementById("deathTitle"),
+    deathText: document.getElementById("deathText"),
+    bars: {
+      hunger: [document.getElementById("hungerBar"), document.getElementById("hungerVal")],
+      happy: [document.getElementById("happyBar"), document.getElementById("happyVal")],
+      energy: [document.getElementById("energyBar"), document.getElementById("energyVal")],
+      clean: [document.getElementById("cleanBar"), document.getElementById("cleanVal")],
+      health: [document.getElementById("healthBar"), document.getElementById("healthVal")]
+    }
+  };
+
+  function makePet(species, nickname, mortality) {
+    const t = now();
+    return {
+      species,
+      nickname: nickname || species,
+      createdAt: t,
+      lastTick: t,
+      hunger: 92,
+      happy: 90,
+      energy: 90,
+      clean: 90,
+      health: 100,
+      xp: 0,
+      level: 1,
+      sleeping: false,
+      mortality: !!mortality,
+      dead: false,
+      funeralHeld: false,
+      log: [
+        `${nickname || species} (${species}) came home with you.`
+      ]
+    };
+  }
+
+  function addLog(msg) {
+    if (!state) return;
+    const stamp = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    state.log.unshift(`${stamp} — ${msg}`);
+    state.log = state.log.slice(0, 30);
+  }
+
+  function save() {
+    if (!state) return;
+    localStorage.setItem(KEY, JSON.stringify(state));
+    els.saveTag.textContent = "Saved";
+    clearTimeout(save._timer);
+    save._timer = setTimeout(() => els.saveTag.textContent = "Auto-save on", 900);
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      state = raw ? JSON.parse(raw) : null;
+    } catch {
+      state = null;
+    }
+  }
+
+  function applyDecay() {
+    if (!state || state.dead) return;
+
+    const current = now();
+    let mins = Math.max(0, (current - state.lastTick) / 60000);
+    mins = Math.min(mins, 8 * 60); // cap offline decay at 8 hours
+    state.lastTick = current;
+
+    if (mins <= 0) return;
+
+    if (state.sleeping) {
+      state.energy = clamp(state.energy + mins * 0.24);
+      state.hunger = clamp(state.hunger - mins * 0.055);
+      state.clean = clamp(state.clean - mins * 0.02);
+      state.happy = clamp(state.happy - mins * 0.01);
+    } else {
+      state.hunger = clamp(state.hunger - mins * 0.075);
+      state.happy = clamp(state.happy - mins * 0.035);
+      state.energy = clamp(state.energy - mins * 0.055);
+      state.clean = clamp(state.clean - mins * 0.045);
+    }
+
+    const danger =
+      (state.hunger < 10 ? 1 : 0) +
+      (state.clean < 8 ? 1 : 0) +
+      (state.energy < 5 ? 1 : 0);
+
+    if (danger > 0) {
+      state.health = clamp(state.health - mins * 0.045 * danger);
+    } else if (state.hunger > 40 && state.clean > 35 && state.energy > 30) {
+      state.health = clamp(state.health + mins * 0.018);
+    }
+
+    if (state.mortality && state.health <= 0) {
+      state.dead = true;
+      addLog(`${state.nickname} passed away.`);
+    } else if (!state.mortality && state.health < 1) {
+      state.health = 1;
+    }
+  }
+
+  function gainXP(amount) {
+    state.xp += amount;
+    let needed = state.level * 100;
+    while (state.xp >= needed) {
+      state.xp -= needed;
+      state.level++;
+      addLog(`${state.nickname} reached level ${state.level}!`);
+      state.happy = clamp(state.happy + 12);
+      state.health = clamp(state.health + 8);
+      needed = state.level * 100;
+    }
+  }
+
+  function act(type) {
+    if (!state || state.dead) return;
+    applyDecay();
+
+    if (state.sleeping && type !== "sleep") {
+      addLog(`${state.nickname} is asleep.`);
+      render(); save(); return;
+    }
+
+    switch (type) {
+      case "feed":
+        state.hunger = clamp(state.hunger + 28);
+        state.happy = clamp(state.happy + 4);
+        state.clean = clamp(state.clean - 4);
+        addLog(`You fed ${state.nickname}.`);
+        break;
+
+      case "play":
+        if (state.energy < 12) {
+          addLog(`${state.nickname} is too tired to play.`);
+        } else {
+          state.happy = clamp(state.happy + 22);
+          state.energy = clamp(state.energy - 12);
+          state.hunger = clamp(state.hunger - 8);
+          gainXP(8);
+          addLog(`You played together.`);
+        }
+        break;
+
+      case "train":
+        if (state.energy < 22 || state.hunger < 18) {
+          addLog(`${state.nickname} needs food and rest before training.`);
+        } else {
+          state.energy = clamp(state.energy - 20);
+          state.hunger = clamp(state.hunger - 15);
+          state.happy = clamp(state.happy + 6);
+          state.clean = clamp(state.clean - 7);
+          gainXP(24);
+          addLog(`${state.nickname} completed a training session.`);
+        }
+        break;
+
+      case "clean":
+        state.clean = clamp(state.clean + 45);
+        state.happy = clamp(state.happy + 3);
+        addLog(`${state.nickname} is clean again.`);
+        break;
+
+      case "heal":
+        if (state.hunger < 20) {
+          addLog(`Feed ${state.nickname} before trying to heal.`);
+        } else {
+          state.health = clamp(state.health + 28);
+          state.hunger = clamp(state.hunger - 8);
+          addLog(`You treated ${state.nickname}.`);
+        }
+        break;
+
+      case "sleep":
+        state.sleeping = !state.sleeping;
+        addLog(state.sleeping ? `${state.nickname} went to sleep.` : `${state.nickname} woke up.`);
+        break;
+
+      case "adventure":
+        if (state.energy < 30 || state.hunger < 25 || state.health < 25) {
+          addLog(`${state.nickname} isn't ready for an adventure yet.`);
+        } else {
+          const roll = Math.random();
+          state.energy = clamp(state.energy - 28);
+          state.hunger = clamp(state.hunger - 18);
+          state.clean = clamp(state.clean - 12);
+
+          if (roll < 0.18) {
+            state.health = clamp(state.health - 14);
+            gainXP(30);
+            addLog(`Adventure: a rough battle! ${state.nickname} gained experience but got hurt.`);
+          } else if (roll < 0.48) {
+            state.happy = clamp(state.happy + 14);
+            gainXP(28);
+            addLog(`Adventure: you found something interesting together.`);
+          } else {
+            state.happy = clamp(state.happy + 8);
+            gainXP(40);
+            addLog(`Adventure: ${state.nickname} had a great training day.`);
+          }
+        }
+        break;
+    }
+
+    render();
+    save();
+  }
+
+  function moodText() {
+    if (state.dead) return "";
+    if (state.sleeping) return "Sleeping peacefully. 💤";
+    if (state.health < 20) return "Looks seriously unwell.";
+    if (state.hunger < 20) return "Is staring at you like it wants food.";
+    if (state.energy < 18) return "Can barely keep its eyes open.";
+    if (state.clean < 18) return "Definitely needs a clean.";
+    if (state.happy < 25) return "Seems lonely and wants attention.";
+    if (state.happy > 80 && state.health > 75) return "Looks happy to see you.";
+    return "Seems okay.";
+  }
+
+  function render() {
+    if (!state) {
+      els.setup.classList.remove("hidden");
+      els.game.classList.add("hidden");
+      els.death.classList.add("hidden");
+      return;
+    }
+
+    applyDecay();
+
+    if (state.dead) {
+      els.setup.classList.add("hidden");
+      els.game.classList.add("hidden");
+      els.death.classList.remove("hidden");
+      els.deathTitle.textContent = `${state.nickname} (${state.species}) has passed away.`;
+      const days = Math.max(0, Math.floor((now() - state.createdAt) / 86400000));
+      els.deathText.textContent = state.funeralHeld
+        ? `You held a funeral for ${state.nickname}. They reached level ${state.level} and lived with you for ${days} day${days === 1 ? "" : "s"}.`
+        : `They reached level ${state.level}. You can hold a small in-game funeral before starting again.`;
+      els.funeralBtn.disabled = state.funeralHeld;
+      els.funeralBtn.textContent = state.funeralHeld ? "Funeral Held" : "Hold Funeral";
+      save();
+      return;
+    }
+
+    els.setup.classList.add("hidden");
+    els.death.classList.add("hidden");
+    els.game.classList.remove("hidden");
+
+    els.sprite.textContent = speciesEmoji[state.species] || "⭐";
+    els.displayName.textContent = `${state.nickname} (${state.species})`;
+    const ageDays = Math.max(0, Math.floor((now() - state.createdAt) / 86400000));
+    els.meta.textContent = `Level ${state.level} · Age ${ageDays} day${ageDays === 1 ? "" : "s"} · ${Math.floor(state.xp)} XP`;
+    els.mood.textContent = moodText();
+
+    const map = {
+      hunger: state.hunger,
+      happy: state.happy,
+      energy: state.energy,
+      clean: state.clean,
+      health: state.health
+    };
+
+    Object.entries(map).forEach(([k, v]) => {
+      const [bar, val] = els.bars[k];
+      bar.style.width = `${clamp(v)}%`;
+      val.textContent = Math.round(clamp(v));
+    });
+
+    els.mortalityToggle.checked = !!state.mortality;
+    els.log.innerHTML = state.log.map(x => `<div>${escapeHTML(x)}</div>`).join("");
+  }
+
+  function escapeHTML(str) {
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
+  }
+
+  els.start.addEventListener("click", () => {
+    const species = els.species.value;
+    const nickname = els.nickname.value.trim() || species;
+    state = makePet(species, nickname, els.mortalitySetup.checked);
+    save();
+    render();
+  });
+
+  document.querySelectorAll("[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => act(btn.dataset.action));
+  });
+
+  els.mortalityToggle.addEventListener("change", () => {
+    state.mortality = els.mortalityToggle.checked;
+    addLog(`Mortality mode ${state.mortality ? "enabled" : "disabled"}.`);
+    save();
+    render();
+  });
+
+  els.renameBtn.addEventListener("click", () => {
+    const name = prompt("New nickname:", state.nickname);
+    if (name && name.trim()) {
+      state.nickname = name.trim().slice(0,16);
+      addLog(`Nickname changed to ${state.nickname}.`);
+      save(); render();
+    }
+  });
+
+  els.resetBtn.addEventListener("click", () => {
+    if (confirm("Reset the game and erase this Pokémon?")) {
+      localStorage.removeItem(KEY);
+      state = null;
+      render();
+    }
+  });
+
+  els.funeralBtn.addEventListener("click", () => {
+    if (!state || !state.dead || state.funeralHeld) return;
+    state.funeralHeld = true;
+    state.log.unshift(`A funeral was held in memory of ${state.nickname}.`);
+    save();
+    render();
+  });
+
+  els.newPetBtn.addEventListener("click", () => {
+    if (confirm("Start with a new Pokémon? This will replace the current save.")) {
+      localStorage.removeItem(KEY);
+      state = null;
+      render();
+    }
+  });
+
+  load();
+  if (state) applyDecay();
+  render();
+
+  setInterval(() => {
+    if (state && !state.dead) {
+      applyDecay();
+      render();
+      save();
+    }
+  }, 60000);
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
